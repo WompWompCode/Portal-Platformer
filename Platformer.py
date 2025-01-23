@@ -9,6 +9,8 @@ win = pygame.display.set_mode((windowWidth,windowHeight))
 font = pygame.font.SysFont("comic sans", 30)
 level = 1
 levelLoaded = False
+interactTimer = 0
+portalTimer = 0
 
 
 class Player:
@@ -41,6 +43,8 @@ class Portal:
     def __init__(self, colour):
         self.x = 0
         self.y = 0
+        self.XPlaced = self.x
+        self.YPlaced = self.y
         self.width = 10
         self.height = 100
         self.colour = colour
@@ -48,13 +52,19 @@ class Portal:
         Portals.append(self)
         
     def draw(self):
-        return pygame.draw.rect(win, self.colour, (self.x, self.y, self.width, self.height))
+        if self.placed:
+            return pygame.draw.rect(win, self.colour, (self.XPlaced, self.YPlaced, self.width, self.height))
+        else:
+            return pygame.draw.rect(win, self.colour, (self.x, self.y, self.width, self.height))
 
 Portals = []
 portalOne = Portal((0, 200, 0))
 portalTwo = Portal((200,200,0))
 
 while run:
+    
+    interactTimer -= 1
+    portalTimer -= 1
     
     for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -68,20 +78,29 @@ while run:
     if keys[pygame.K_d]:
         playerOne.x += 5
         
-    if keys[pygame.K_r]:
-        for portal in Portals:
-            if portal.placed == False:
-                portal.width, portal.height = portal.height, portal.width
-    
     if playerOne.grounded == True:
         if keys[pygame.K_SPACE]:
             playerOne.y -= 300
-            
-    if pygame.mouse.get_pressed()[0]:
-        portalOne.placed = True
+    
+    if interactTimer <= 0:
         
-    if pygame.mouse.get_pressed()[2]:
-        portalTwo.placed = True
+        if keys[pygame.K_r]:
+            for portal in Portals:
+                if portal.placed == False:
+                    portal.width, portal.height = portal.height, portal.width
+                    interactTimer = 30
+                
+        if pygame.mouse.get_pressed()[0]:
+            portalOne.placed = True
+            portalOne.XPlaced = portalOne.x
+            portalOne.YPlaced = portalOne.y
+            interactTimer = 30
+            
+        if pygame.mouse.get_pressed()[2]:
+            portalTwo.placed = True
+            portalTwo.XPlaced = portalTwo.x
+            portalTwo.YPlaced = portalTwo.y
+            interactTimer = 30
         
     
     
@@ -95,7 +114,25 @@ while run:
                 levelLoaded = True
                 
                 
-    playerOne.grounded = False    
+    playerOne.grounded = False
+
+    if portalTimer <= 0:
+
+        if playerOne.x <= portalOne.XPlaced <= playerOne.width and portalOne.YPlaced <= playerOne.y <= portalOne.YPlaced <= playerOne.y + playerOne.width:
+            playerOne.x == portalTwo.XPlaced
+            playerOne.y = portalTwo.YPlaced
+            portalTimer = 60
+            print("Portal One to Portal Two")
+            
+        elif playerOne.x <= portalTwo.XPlaced <= playerOne.width and portalTwo.YPlaced <= playerOne.y <= portalTwo.YPlaced <= playerOne.y + playerOne.width:
+            playerOne.x == portalOne.XPlaced
+            playerOne.y = portalOne.YPlaced
+            portalTimer = 60
+            print("Portal Two to Portal One")
+            
+        
+        
+
     for terrain in Terrains:
         if terrain.x <= playerOne.x <= playerOne.x + playerOne.width <= terrain.x + terrain.width:
             pass 
