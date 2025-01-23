@@ -23,7 +23,7 @@ class Player:
         return pygame.draw.rect(win, (255, 0, 0), (self.x, self.y, self.width, self.height))
 
 
-playerOne = Player(200, 100, 50, 75)
+playerOne = Player(500, 100, 50, 75)
 
 class Terrain:
     def __init__(self,x,y,width,height):
@@ -36,6 +36,23 @@ class Terrain:
         return pygame.draw.rect(win, (0, 0, 200), (self.x, self.y, self.width, self.height))
 
 Terrains = []
+
+class Portal:
+    def __init__(self, colour):
+        self.x = 0
+        self.y = 0
+        self.width = 10
+        self.height = 100
+        self.colour = colour
+        self.placed = False
+        Portals.append(self)
+        
+    def draw(self):
+        return pygame.draw.rect(win, self.colour, (self.x, self.y, self.width, self.height))
+
+Portals = []
+portalOne = Portal((0, 200, 0))
+portalTwo = Portal((200,200,0))
 
 while run:
     
@@ -50,10 +67,22 @@ while run:
         
     if keys[pygame.K_d]:
         playerOne.x += 5
+        
+    if keys[pygame.K_r]:
+        for portal in Portals:
+            if portal.placed == False:
+                portal.width, portal.height = portal.height, portal.width
     
     if playerOne.grounded == True:
         if keys[pygame.K_SPACE]:
             playerOne.y -= 300
+            
+    if pygame.mouse.get_pressed()[0]:
+        portalOne.placed = True
+        
+    if pygame.mouse.get_pressed()[2]:
+        portalTwo.placed = True
+        
     
     
     if levelLoaded == False:    
@@ -61,13 +90,24 @@ while run:
             case 1:
                 Terrains = []
                 Terrains.append(Terrain(0, 780, 2000, 300))
+                Terrains.append(Terrain(400, 500, 200, 280))
+                Terrains.append(Terrain(800, 600, 1200, 180))
                 levelLoaded = True
                 
                 
     playerOne.grounded = False    
     for terrain in Terrains:
-        if playerOne.y+playerOne.height >= terrain.y:
+        if terrain.x <= playerOne.x <= playerOne.x + playerOne.width <= terrain.x + terrain.width:
+            pass 
+        elif (terrain.x <= playerOne.x + playerOne.width <= terrain.x + terrain.width) and ((playerOne.y > terrain.y or playerOne.y + playerOne.height > terrain.y) and (playerOne.y < terrain.y + terrain.height or playerOne.y + playerOne.width < terrain.y + terrain.height)):
+            playerOne.x = terrain.x - playerOne.width
+        elif (terrain.x < playerOne.x <= terrain.x + terrain.width) and ((playerOne.y > terrain.y or playerOne.y + playerOne.height > terrain.y) and (playerOne.y < terrain.y + terrain.height or playerOne.y + playerOne.width < terrain.y + terrain.height)):
+            playerOne.x = terrain.x + terrain.width
+        if playerOne.y+playerOne.height >= terrain.y and playerOne.y < terrain.y and (playerOne.x + playerOne.width > terrain.x and playerOne.x < terrain.x + terrain.width):
+            playerOne.y = terrain.y - playerOne.height
             playerOne.grounded = True
+            
+    
     if playerOne.grounded == False:
         playerOne.y += 10
         
@@ -77,9 +117,25 @@ while run:
                 
     win.fill((10,10,10))
     
+    mouseX, mouseY = pygame.mouse.get_pos()
+    
+    for portal in Portals:
+        if portal.placed == False:
+            portal.x = mouseX - (portal.width/2)
+            portal.y = mouseY - (portal.height/2)
+    
     for terrain in Terrains:
         terrain.draw()
     playerOne.draw()
+    for portal in Portals:
+        portal.draw()
+    
+    
+    
+    playerXDisplay = font.render(f"Player X: {playerOne.x}", 1, "white")
+    playerYDisplay = font.render(f"Player Y: {playerOne.y}", 1, "white")
+    win.blit(playerXDisplay, (100, 50))
+    win.blit(playerYDisplay, (100, 100))
     
     clock = pygame.time.Clock()
     clock.tick(60)
